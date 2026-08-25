@@ -1,0 +1,18 @@
+{
+  "name": "radiozec",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npx tsx watch src/index.ts",
+    "dev:client": "cd client && npx vite --host",
+    "build": "cd client && npx vite build && cd ../server && npx tsc"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

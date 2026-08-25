@@ -1,0 +1,60 @@
+<icecast>
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- RadioZec — Icecast Configuration                  -->
+    <!-- Portable config — NOT relying on /etc/icecast2/   -->
+    <!-- ══════════════════════════════════════════════════ -->
+
+    <location>RadioZec</location>
+    <admin>admin@radiozec.com</admin>
+
+    <limits>
+        <clients>100</clients>
+        <sources>2</sources>
+        <queue-size>524288</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65535</burst-size>
+    </limits>
+
+    <authentication>
+        <!-- Password Liquidsoap uses to connect as a source -->
+        <source-password>hackme</source-password>
+        <!-- Password for relay connections -->
+        <relay-password>hackme</relay-password>
+        <!-- Admin web interface credentials -->
+        <admin-user>admin</admin-user>
+        <admin-password>hackme</admin-password>
+    </authentication>
+
+    <hostname>localhost</hostname>
+
+    <listen-socket>
+        <port>8001</port>
+        <!-- Bind to all interfaces for dev; restrict in production -->
+        <bind-address>0.0.0.0</bind-address>
+    </listen-socket>
+
+    <!-- CORS headers for browser <audio> element -->
+    <http-headers>
+        <header type="cors" name="Access-Control-Allow-Origin" value="*" />
+        <header type="cors" name="Access-Control-Allow-Headers" value="Origin, Accept, Content-Type, Icy-MetaData" />
+    </http-headers>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast2</basedir>
+        <logdir>./logs</logdir>
+        <webroot>/usr/share/icecast2/web</webroot>
+        <adminroot>/usr/share/icecast2/admin</adminroot>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>3</loglevel>
+        <logsize>10000</logsize>
+    </logging>
+</icecast>

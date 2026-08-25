@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment (contains secrets)
+.env
+
+# Database
+*.db
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Downloaded audio files
+server/media/*.mp3
+server/media/*.opus
+server/media/*.ogg
+server/media/*.m4a
+
+# Runtime logs
+server/logs/
+
+# Portable binaries (download locally)
+server/mediamtx
+server/icecast2
+
+# Fallback music (user-provided, not tracked)
+server/media/fallback/*.mp3
+server/media/fallback/*.ogg
+server/media/fallback/*.opus
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# PID files
+.pids/
+
+# Auto-generated SSL certs
+auto.crt
+auto.key
+server/auto.crt
+server/auto.key

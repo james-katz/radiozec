@@ -1,0 +1,38 @@
+# ══════════════════════════════════════════════════════════
+# RadioZec — MediaMTX Configuration
+# Handles OBS RTMP ingest and WebRTC/HLS output for live events
+# ══════════════════════════════════════════════════════════
+
+# ── Logging ──
+logLevel: info
+
+# ── API (used by Node.js to check stream status) ──
+api: yes
+apiAddress: 127.0.0.1:9997
+
+# ── RTMP (OBS ingest) ──
+rtmp: yes
+rtmpAddress: :1935
+
+# ── HLS (fallback playback) ──
+hls: yes
+hlsAddress: :8888
+hlsAllowOrigin: '*'
+hlsVariant: mpegts
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsAlwaysRemux: yes
+
+# ── WebRTC (low-latency playback) ──
+webrtc: yes
+webrtcAddress: :8889
+
+# ── Disable unused protocols ──
+rtsp: no
+srt: no
+record: no
+
+# ── Paths ──
+paths:
+  zecradio-live:
+    source: publisher
