@@ -5,6 +5,7 @@ export interface AppConfig {
   // Zkool / Zcash
   gqlUrl: string;
   network: string;
+  zkoolAccountId: number;
 
   // Server
   useHttps: boolean;
@@ -44,6 +45,7 @@ export interface AppConfig {
 export const config: AppConfig = {
   gqlUrl: process.env.GQL_URL || 'http://127.0.0.1:8000/graphql',
   network: process.env.NETWORK || 'test',
+  zkoolAccountId: parseInt(process.env.ZKOOL_ACCOUNT_ID || '1', 10),
   useHttps: process.env.USE_HTTPS === 'true',
   port: parseInt(process.env.PORT || '3000', 10),
   jwtSecret: process.env.JWT_SECRET_KEY || 'dev-secret-change-me',

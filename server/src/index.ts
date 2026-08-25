@@ -48,9 +48,12 @@ async function main() {
 
   // ── Initialize Zkool ──────────────────────────────────
   const zkool = new ZkoolClient(config.gqlUrl);
+  zkool.accountId = config.zkoolAccountId;
   const zkoolReady = await zkool.init(true);
   if (!zkoolReady) {
     console.warn('[Server] Zkool client failed to initialize. Donation scanning disabled.');
+  } else {
+    console.log(`[Zkool] Using account ID: ${config.zkoolAccountId}`);
   }
 
   // ── Initialize Liquidsoap Client ──────────────────────
