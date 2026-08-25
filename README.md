@@ -12,7 +12,7 @@ Donation (ZEC memo) → yt-dlp (extract audio) → Liquidsoap (queue + crossfade
 - **Liquidsoap** — Audio pipeline (queue management, crossfade, jingles, fallback playlist)
 - **yt-dlp** — Downloads audio from YouTube URLs found in donation memos
 - **Node.js/Express** — API server, Socket.IO for real-time chat & track info
-- **React/Vite** — Frontend with audio visualizer, chat, and queue display
+- **React/Vite** — Frontend with audioMotion visualizer, chat, and queue display
 
 ## System Requirements
 
@@ -33,7 +33,7 @@ Donation (ZEC memo) → yt-dlp (extract audio) → Liquidsoap (queue + crossfade
 | Package | Purpose | Install |
 |---------|---------|---------|
 | **Zkool** / Zcash wallet daemon | Receives ZEC donations | See [Zkool docs](https://github.com/nickaknudson/zkool) |
-| **MediaMTX** | OBS live streaming (RTMP → HLS) | [Download binary](https://github.com/bluenviron/mediamtx/releases) |
+| **MediaMTX** | OBS live streaming (RTMP → WebRTC/HLS) | [Download binary](https://github.com/bluenviron/mediamtx/releases) |
 
 ### Verify installation
 
@@ -50,36 +50,49 @@ liquidsoap --version  # ≥ 2.2.x recommended
 ### 1. Clone & install
 
 ```bash
-git clone <repo-url> zecradio && cd zecradio
+git clone https://github.com/james-katz/radiozec.git && cd radiozec
 npm install
-cd client && npm install && cd ..
-cd server && npm install && cd ..
 ```
 
 ### 2. Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env — set JWT_SECRET_KEY, passwords, etc.
+# Edit .env — set JWT_SECRET_KEY, SEED_PASSWORD, NETWORK, etc.
 ```
 
-### 3. Add fallback music
+### 3. Seed fallback music
 
-Download some audio files to `server/media/fallback/` — these play when the queue is empty:
+RadioZec needs audio files in `server/media/fallback/` to play when the queue is empty. The seed script downloads 30 royalty-free NCS tracks:
 
 ```bash
-yt-dlp -x --audio-format mp3 --audio-quality 0 -o 'server/media/fallback/%(title)s.%(ext)s' \
-  "https://www.youtube.com/watch?v=K4DyBUG242c" \
-  "https://www.youtube.com/watch?v=__CRWE-L45k"
+cd server && npm run seed:fallback
 ```
 
-### 4. Start everything
+This uses `yt-dlp` to download the tracks. It's idempotent — safe to re-run if some fail.
+
+### 4. (Optional) Set up Zcash wallet
+
+If you have a [Zkool](https://github.com/nickaknudson/zkool) daemon running, import your viewing key so RadioZec can scan for donations:
+
+```bash
+cd server && npm run setup:zkool
+```
+
+The script will:
+1. Connect to Zkool at the `GQL_URL` in your `.env`
+2. List existing accounts or import a new viewing key
+3. Print the `ZKOOL_ACCOUNT_ID` to add to `.env`
+
+Without Zkool, RadioZec works fine — users just can't queue songs via ZEC donations.
+
+### 5. Start everything
 
 ```bash
 ./start.sh          # Starts Icecast → Liquidsoap → dev server
 ```
 
-That's it. The script checks dependencies, starts Icecast and Liquidsoap in the background, then launches the dev server.
+The script checks dependencies, starts Icecast and Liquidsoap in the background, then launches the dev server.
 
 | Command | Description |
 |---------|-------------|
@@ -92,10 +105,6 @@ That's it. The script checks dependencies, starts Icecast and Liquidsoap in the 
 > Default passwords in `server/icecast.xml` are `hackme` — **change them for production!**
 
 Open **http://localhost:5173** and click **"Tune In"** to start listening!
-
-### 7. (Optional) Connect a Zcash wallet
-
-If you have a Zkool/Zcash wallet daemon running on port 8000 (GraphQL), RadioZec will automatically scan for incoming donations and queue songs from YouTube links in the memos.
 
 ## Jingles
 
@@ -115,25 +124,53 @@ Access at **http://localhost:5173/admin**
 - Queue management (add/remove/skip tracks)
 - Donation history & analytics
 - Pricing configuration
+- Live mode toggle (Go Live / End Live Stream)
+- Session persists for 24h via localStorage
 
 ## Configuration
 
 All settings are in `.env` (see `.env.example` for reference):
 
+### Core
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ICECAST_URL` | `http://localhost:8000/radio` | Public Icecast stream URL |
+| `GQL_URL` | `http://127.0.0.1:8000/graphql` | Zkool GraphQL endpoint |
+| `ZKOOL_ACCOUNT_ID` | `1` | Zkool account to scan for donations (run `npm run setup:zkool`) |
+| `NETWORK` | `main` | Zcash network (`main` or `test`) |
+| `JWT_SECRET_KEY` | — | Secret for admin JWT tokens (**change this!**) |
+| `SEED_USERNAME` | `admin` | Admin username (first run only) |
+| `SEED_PASSWORD` | `changeme123` | Admin password (first run only) |
+
+### Audio Streaming
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ICECAST_URL` | `http://localhost:8001/radio` | Public Icecast stream URL |
 | `LIQUIDSOAP_HOST` | `127.0.0.1` | Liquidsoap telnet host |
 | `LIQUIDSOAP_PORT` | `1234` | Liquidsoap telnet port |
 | `MEDIA_DIR` | `./media` | Audio download directory |
 | `AUDIO_FORMAT` | `mp3` | Download format (`mp3`, `opus`) |
 | `AUDIO_BITRATE` | `192` | Encoding bitrate (kbps) |
 | `MEDIA_CLEANUP_HOURS` | `24` | Auto-delete files older than N hours |
+
+### Donations
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `QUEUE_VIDEO_PRICE` | `0.001` | ZEC cost to queue a song |
 | `SKIP_VIDEO_PRICE` | `0.005` | ZEC cost to skip current song |
+| `SCAN_INTERVAL_MS` | `30000` | Donation scanner poll interval (ms) |
+
+### Live Streaming (Optional)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `MEDIAMTX_API_URL` | `http://127.0.0.1:9997` | MediaMTX API (stream status checks) |
-| `MEDIAMTX_HLS_URL` | `/live/` | HLS stream URL for live events |
+| `MEDIAMTX_HLS_URL` | `/hls/zecradio-live/index.m3u8` | HLS stream URL for live events |
 | `LIVE_STREAM_KEY` | `zecradio-live` | OBS stream key for live mode |
+
+> MediaMTX variables are only needed if you use the "Go Live" feature. Without MediaMTX, RadioZec works fine — just no live video.
 
 ## Live Streaming (Optional)
 
@@ -142,43 +179,53 @@ RadioZec supports **live video streaming** from OBS for community events.
 ### How it works
 
 ```
-OBS Studio → RTMP → MediaMTX → HLS → Browser <video>
+OBS Studio → RTMP → MediaMTX → WebRTC/HLS → Browser <video>
 ```
+
+When live mode is activated:
+- Song queue automatically pauses
+- All listeners switch from audio visualizer to live video player
+- Queue/Skip buttons are disabled
+- Chat continues working
+- When the stream ends, a "Back to Radio" button appears
 
 ### Setup
 
-1. **Download MediaMTX** (single binary, no install needed):
+1. **Install MediaMTX** via the startup script:
    ```bash
-   wget https://github.com/bluenviron/mediamtx/releases/latest/download/mediamtx_v1.x.x_linux_amd64.tar.gz
-   tar -xzf mediamtx_*.tar.gz
+   ./start.sh install
    ```
 
-2. **Start MediaMTX** with the bundled config:
-   ```bash
-   ./mediamtx server/mediamtx.yml &
-   ```
-
-3. **Configure OBS**:
+2. **Configure OBS**:
    - **Service**: Custom
    - **Server**: `rtmp://your-server-ip:1935/live`
    - **Stream Key**: `zecradio-live`
 
-4. **Go live** from the admin panel (`/admin` → "▶ Go Live")
-   - The song queue automatically pauses
-   - All connected users switch from audio visualizer to video player
-   - Chat continues working normally
+3. **Go live** from the admin panel (`/admin` → "▶ Go Live")
 
-5. Click **"⏹ End Live Stream"** to return to radio mode
+4. Click **"⏹ End Live Stream"** to return to radio mode
+
+## NPM Scripts
+
+### Server (`cd server`)
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server with hot reload |
+| `npm run build` | Compile TypeScript |
+| `npm run start` | Start production server |
+| `npm run setup:zkool` | Interactive Zkool account setup |
+| `npm run seed:fallback` | Download 30 royalty-free fallback tracks |
 
 ## Project Structure
 
 ```
-zecradio/
+radiozec/
 ├── client/                  # React/Vite frontend
 │   └── src/
 │       ├── components/
-│       │   ├── Player/      # RadioPlayer (audio + visualizer)
-│       │   ├── Chat/        # Anonymous chat panel
+│       │   ├── Player/      # RadioPlayer (audioMotion visualizer) + LivePlayer
+│       │   ├── Chat/        # Anonymous chat panel + queue modal
 │       │   └── Queue/       # Queue display
 │       ├── stores/          # Zustand state management
 │       ├── hooks/           # Socket.IO hooks
@@ -189,15 +236,21 @@ zecradio/
 │   │   ├── downloader.ts    # yt-dlp wrapper
 │   │   ├── liquidsoap.ts    # Telnet client
 │   │   ├── queue.ts         # Queue + Liquidsoap delegation
+│   │   ├── liveMode.ts      # Live streaming state management
 │   │   ├── sync.ts          # Stream state broadcast
 │   │   ├── scanner.ts       # Donation scanner
-│   │   ├── zkool.ts         # Zcash wallet client
+│   │   ├── zkool.ts         # Zcash wallet client (GraphQL)
 │   │   └── chat.ts          # Chat server
+│   ├── scripts/
+│   │   ├── setup-zkool.ts   # Interactive Zkool account setup
+│   │   └── seed-fallback.sh # Download fallback music
 │   ├── radio.liq            # Liquidsoap configuration
 │   ├── icecast.xml          # Icecast configuration
+│   ├── mediamtx.yml         # MediaMTX configuration (live streaming)
 │   └── media/
 │       ├── fallback/        # Default playlist audio files
 │       └── jingles/         # Between-track jingles
+├── start.sh                 # All-in-one startup script
 └── .env.example             # Environment configuration template
 ```
 

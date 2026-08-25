@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "setup:zkool": "tsx scripts/setup-zkool.ts"
+    "setup:zkool": "tsx scripts/setup-zkool.ts",
+    "seed:fallback": "bash scripts/seed-fallback.sh"
   },
   "dependencies": {
     "cors": "^2.8.5",

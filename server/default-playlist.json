@@ -1,27 +1,30 @@
 [
-  {
-    "youtubeId": "K4DyBUG242c",
-    "title": "Elektronomia - Sky High [NCS Release]",
-    "thumbnail": "https://img.youtube.com/vi/K4DyBUG242c/hqdefault.jpg"
-  },
-  {
-    "youtubeId": "__CRWE-L45k",
-    "title": "Disfigure - Blank [NCS Release]",
-    "thumbnail": "https://img.youtube.com/vi/__CRWE-L45k/hqdefault.jpg"
-  },
-  {
-    "youtubeId": "bM7SZ5SBzyY",
-    "title": "Alan Walker - Spectre [NCS Release]",
-    "thumbnail": "https://img.youtube.com/vi/bM7SZ5SBzyY/hqdefault.jpg"
-  },
-  {
-    "youtubeId": "J2X5mJ3HDYE",
-    "title": "DEAF KEV - Invincible [NCS Release]",
-    "thumbnail": "https://img.youtube.com/vi/J2X5mJ3HDYE/hqdefault.jpg"
-  },
-  {
-    "youtubeId": "TW9d8vYrVFQ",
-    "title": "Itro & Tobu - Cloud 9 [NCS Release]",
-    "thumbnail": "https://img.youtube.com/vi/TW9d8vYrVFQ/hqdefault.jpg"
-  }
+  { "youtubeId": "K4DyBUG242c", "title": "Elektronomia - Sky High" },
+  { "youtubeId": "__CRWE-L45k", "title": "Disfigure - Blank" },
+  { "youtubeId": "bM7SZ5SBzyY", "title": "Alan Walker - Spectre" },
+  { "youtubeId": "J2X5mJ3HDYE", "title": "DEAF KEV - Invincible" },
+  { "youtubeId": "TW9d8vYrVFQ", "title": "Itro & Tobu - Cloud 9" },
+  { "youtubeId": "AOeY-nDp7hI", "title": "Alan Walker - Fade" },
+  { "youtubeId": "MEYHMnAqkYc", "title": "Tobu - Hope" },
+  { "youtubeId": "IIrCDAV3EgI", "title": "Cartoon - On & On (feat. Daniel Levi)" },
+  { "youtubeId": "B7xai5u_tnk", "title": "Tobu - Candyland" },
+  { "youtubeId": "m7Bc3pLyij0", "title": "Tobu & Itro - Sunburst" },
+  { "youtubeId": "u1I9ITfzqFs", "title": "Tobu - Infectious" },
+  { "youtubeId": "QEoEjAXeaBE", "title": "Tobu - Colors" },
+  { "youtubeId": "FseAiT2JKEE", "title": "Cartoon - Why We Lose (feat. Coleman Trapp)" },
+  { "youtubeId": "n1WpP7iowLc", "title": "Elektronomia - Sky High pt. II" },
+  { "youtubeId": "bAXUKnZMOcQ", "title": "Cartoon - C U Again (feat. Mikk Mäe)" },
+  { "youtubeId": "tua4SVV2mSE", "title": "Kisma - Fingertips" },
+  { "youtubeId": "zzGLAAJwcSM", "title": "Aero Chord - Surface" },
+  { "youtubeId": "UNbvYMGMn9I", "title": "Mendum - Beyond (feat. Omri)" },
+  { "youtubeId": "gAMbkJk6gnE", "title": "Jim Yosef - Firefly" },
+  { "youtubeId": "oGPZhn2wJCQ", "title": "Distrion & Alex Skrindo - Lightning" },
+  { "youtubeId": "8VDjPYcL-oU", "title": "Lensko - Cetus" },
+  { "youtubeId": "HLQ1cM3b6G4", "title": "Lensko - Let's Go!" },
+  { "youtubeId": "S19UcWdOA-I", "title": "Jim Yosef - Link" },
+  { "youtubeId": "zj06ykBmtLQ", "title": "Warriyo - Mortals (feat. Laura Brehm)" },
+  { "youtubeId": "EHU3st6qstQ", "title": "Unknown Brain - Superhero (feat. Chris Linton)" },
+  { "youtubeId": "VtKbiyyVZks", "title": "Diviners - Savannah (feat. Philly K)" },
+  { "youtubeId": "AwIzWaBHCKQ", "title": "Janji - Heroes Tonight (feat. Johnning)" },
+  { "youtubeId": "0VFU93MgcDU", "title": "Axol x Alex Skrindo - You" }
 ]
