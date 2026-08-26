@@ -4,9 +4,11 @@
 # Starts all required services in the correct order.
 # Usage:
 #   ./start.sh              Start everything (dev mode)
-#   ./start.sh prod         Start in production mode
+#   ./start.sh prod         Start in production mode (daemonized)
 #   ./start.sh stop         Stop all RadioZec services
+#   ./start.sh restart      Restart all services (prod mode)
 #   ./start.sh status       Show status of all services
+#   ./start.sh logs         Tail all service logs
 #   ./start.sh install      Install optional dependencies (MediaMTX)
 # ══════════════════════════════════════════════════════════
 
@@ -269,6 +271,33 @@ do_status() {
   echo ""
 }
 
+# ── Logs Command ────────────────────────────────────────
+
+do_logs() {
+  local follow="${1:-}"
+  echo ""
+  echo -e "${BOLD}RadioZec Logs${NC}"
+  echo "─────────────────────────────"
+  echo -e "  Log dir: ${DIM}$LOG_DIR/${NC}"
+  echo ""
+
+  local logfiles=()
+  for f in "$LOG_DIR"/*.log; do
+    [ -f "$f" ] && logfiles+=("$f")
+  done
+
+  if [ ${#logfiles[@]} -eq 0 ]; then
+    log_warn "No log files found in $LOG_DIR/"
+    return
+  fi
+
+  echo -e "  ${DIM}Following: ${logfiles[*]##*/}${NC}"
+  echo -e "  ${DIM}Press Ctrl+C to stop${NC}"
+  echo ""
+
+  tail -f "${logfiles[@]}"
+}
+
 # ── Start Command ───────────────────────────────────────
 
 do_start() {
@@ -394,7 +423,10 @@ do_start() {
     echo -e "   Icecast: http://localhost:8001"
     echo -e "   Logs:    $LOG_DIR/"
     echo ""
-    echo -e "   Stop with: ${BOLD}./start.sh stop${NC}"
+    echo -e "   ${DIM}./start.sh status${NC}   Check service health"
+    echo -e "   ${DIM}./start.sh logs${NC}     Follow live output"
+    echo -e "   ${DIM}./start.sh stop${NC}     Stop all services"
+    echo -e "   ${DIM}./start.sh restart${NC}  Restart everything"
     echo "─────────────────────────────────────"
   else
     echo "─────────────────────────────────────"
@@ -422,6 +454,14 @@ case "${1:-}" in
     ;;
   status)
     do_status
+    ;;
+  logs|log)
+    do_logs
+    ;;
+  restart)
+    do_stop
+    sleep 1
+    do_start prod
     ;;
   install)
     do_install
