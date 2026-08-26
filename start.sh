@@ -380,8 +380,10 @@ do_start() {
     (cd "$SERVER_DIR" && npx tsc)
     echo ""
     log_info "Starting Node.js (production)..."
-    (cd "$SERVER_DIR" && node dist/index.js &>"$LOG_DIR/node.log" &)
+    cd "$SERVER_DIR"
+    nohup node dist/index.js &>"$LOG_DIR/node.log" &
     save_pid "node" $!
+    cd "$PROJECT_ROOT"
     wait_for_port 3000 "Node.js" 10
     echo ""
     echo "─────────────────────────────────────"
