@@ -39,6 +39,29 @@ if ! command -v ffmpeg &>/dev/null; then
   exit 1
 fi
 
+# ── Check yt-dlp version (YouTube breaks old versions constantly) ──
+YT_DLP_VERSION=$(yt-dlp --version 2>/dev/null || echo "0")
+YT_DLP_YEAR=$(echo "$YT_DLP_VERSION" | cut -d. -f1)
+
+if [ "$YT_DLP_YEAR" -lt 2026 ] 2>/dev/null; then
+  echo -e "${RED}⚠ yt-dlp version $YT_DLP_VERSION is outdated!${NC}"
+  echo -e "  YouTube changes their API frequently — old versions will fail."
+  echo ""
+  read -p "  Auto-update yt-dlp now? (Y/n): " UPDATE_CHOICE
+  if [ "${UPDATE_CHOICE,,}" != "n" ]; then
+    echo -e "  ${CYAN}Updating yt-dlp...${NC}"
+    if pip install --upgrade yt-dlp 2>/dev/null || pip install --break-system-packages --upgrade yt-dlp 2>/dev/null; then
+      echo -e "  ${GREEN}✓ yt-dlp updated to $(yt-dlp --version)${NC}"
+    else
+      echo -e "  ${RED}✗ Auto-update failed. Try manually: pip install --upgrade yt-dlp${NC}"
+      exit 1
+    fi
+  else
+    echo -e "  ${YELLOW}Continuing with outdated version — downloads may fail.${NC}"
+  fi
+  echo ""
+fi
+
 mkdir -p "$FALLBACK_DIR"
 
 # ══════════════════════════════════════════════════════════
@@ -57,7 +80,7 @@ TRACKS=(
   "AOeY-nDp7hI"   # Alan Walker - Fade
   "MEYHMnAqkYc"   # Tobu - Hope
   "IIrCDAV3EgI"   # Cartoon - On & On (feat. Daniel Levi)
-  "yJg-Y5byMMw"   # Wiz Khalifa - Something New (feat. Ty Dolla $ign) [NCS Fanmade]
+  "RkGKanKQ4MA"   # Tobu - Seven
   "B7xai5u_tnk"   # Tobu - Candyland
   "m7Bc3pLyij0"   # Tobu & Itro - Sunburst
   "u1I9ITfzqFs"   # Tobu - Infectious
@@ -99,6 +122,18 @@ echo "║     Downloading $TOTAL royalty-free tracks          ║"
 echo "╚════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo -e "Target: ${BOLD}$FALLBACK_DIR${NC}"
+# ── Check for cookies file (needed on VPS/datacenter IPs) ──
+COOKIES_FILE="$SCRIPT_DIR/../cookies.txt"
+COOKIES_ARGS=()
+if [ -f "$COOKIES_FILE" ]; then
+  echo -e "  ${GREEN}✓${NC} Using cookies from: $COOKIES_FILE"
+  COOKIES_ARGS=(--cookies "$COOKIES_FILE")
+else
+  echo -e "  ${YELLOW}⚠${NC} No cookies.txt found in server/"
+  echo -e "    YouTube may block downloads from datacenter IPs."
+  echo -e "    To fix: export cookies from your browser and place at server/cookies.txt"
+  echo -e "    See: ${CYAN}https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp${NC}"
+fi
 echo ""
 
 for id in "${TRACKS[@]}"; do
@@ -119,6 +154,8 @@ for id in "${TRACKS[@]}"; do
     -o "$FALLBACK_DIR/%(title)s [%(id)s].%(ext)s" \
     --no-playlist \
     --no-warnings \
+    --js-runtimes node \
+    "${COOKIES_ARGS[@]}" \
     --quiet \
     2>/dev/null; then
     echo -e "\r  ${GREEN}✓${NC} $id — downloaded                    "

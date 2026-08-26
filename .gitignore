@@ -46,3 +46,7 @@ auto.crt
 auto.key
 server/auto.crt
 server/auto.key
+
+# YouTube auth cookies (contains tokens — NEVER commit)
+cookies.txt
+server/cookies.txt

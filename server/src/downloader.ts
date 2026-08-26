@@ -42,6 +42,10 @@ export async function downloadAudio(youtubeId: string): Promise<DownloadResult> 
 
   const url = `https://www.youtube.com/watch?v=${youtubeId}`;
 
+  // Check for cookies file (needed on VPS/datacenter IPs to bypass YouTube bot detection)
+  const cookiesPath = path.resolve(__dirname, '..', 'cookies.txt');
+  const hasCookies = fs.existsSync(cookiesPath);
+
   return new Promise<DownloadResult>((resolve, reject) => {
     const args = [
       url,
@@ -53,7 +57,13 @@ export async function downloadAudio(youtubeId: string): Promise<DownloadResult> 
       '--no-warnings',                      // Suppress warnings
       '--print-json',                       // Print metadata as JSON to stdout
       '--no-simulate',                      // Actually download (needed with --print-json)
+      '--js-runtimes', 'node',             // Use Node.js for YouTube JS challenges
     ];
+
+    // Add cookies if available
+    if (hasCookies) {
+      args.push('--cookies', cookiesPath);
+    }
 
     let stdout = '';
     let stderr = '';
