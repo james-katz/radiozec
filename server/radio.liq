@@ -3,6 +3,8 @@
 # ══════════════════════════════════════════════════════════
 # RadioZec — Liquidsoap Configuration
 # Community radio powered by Zcash donations
+#
+# Compatible with Liquidsoap 1.4.x and 2.x
 # ══════════════════════════════════════════════════════════
 
 # ── Server Settings ──────────────────────────────────────
@@ -40,7 +42,7 @@ radio = mksafe(radio)
 # ── Track Change Webhook ─────────────────────────────────
 # Notify the Node.js server whenever a new track starts
 
-def on_new_track(m) =
+def on_new_track(m)
   title = m["title"]
   artist = m["artist"]
   filename = m["filename"]
@@ -48,15 +50,15 @@ def on_new_track(m) =
 
   data = '{"title":"#{title}","artist":"#{artist}","filename":"#{filename}","youtubeId":"#{youtube_id}"}'
 
-  # Use curl since ocurl is not available in this Liquidsoap build
-  ignore(process.run("curl -s -X POST -H 'Content-Type: application/json' -d '#{data}' http://127.0.0.1:3000/api/internal/track-change"))
+  # Use system() for 1.4.x compat, process.run() for 2.x
+  system("curl -s -X POST -H 'Content-Type: application/json' -d '#{data}' http://127.0.0.1:3000/api/internal/track-change &")
 end
 
 # Save reference for skip
 skippable = radio
 
-# Register track change callback (side-effect in 2.0.x)
-radio.on_track(on_new_track)
+# Register track change callback
+source.on_metadata(skippable, on_new_track)
 
 # ── Register Skip Command ───────────────────────────────
 server.register(
@@ -78,6 +80,6 @@ output.icecast(
   name="RadioZec",
   genre="Various",
   description="Community radio powered by Zcash donations",
-  url="https://radiozec.com",
+  url="https://radio.zcashbr.com",
   radio
 )
