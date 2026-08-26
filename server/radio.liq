@@ -54,11 +54,9 @@ def on_new_track(m)
   system("curl -s -X POST -H 'Content-Type: application/json' -d '#{data}' http://127.0.0.1:3000/api/internal/track-change &")
 end
 
-# Save reference for skip
-skippable = radio
-
-# Register track change callback
-source.on_metadata(skippable, on_new_track)
+# Save reference for skip and register metadata callback
+# In 1.4.x, on_metadata wraps the source
+radio = on_metadata(on_new_track, radio)
 
 # ── Register Skip Command ───────────────────────────────
 server.register(
@@ -66,7 +64,7 @@ server.register(
   usage="skip",
   description="Skip the current track",
   "skip",
-  fun(_) -> begin source.skip(skippable) "Done!" end
+  fun(_) -> begin source.skip(radio) "Done!" end
 )
 
 # ── Output to Icecast ────────────────────────────────────
