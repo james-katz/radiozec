@@ -31,6 +31,14 @@ NC='\033[0m' # No Color
 PID_DIR="$PROJECT_ROOT/.pids"
 mkdir -p "$PID_DIR" "$LOG_DIR"
 
+# ── Source fnm (Fast Node Manager) if available ─────────
+# Ensures we use the correct Node.js version (v22+)
+FNM_PATH="${FNM_PATH:-$HOME/.local/share/fnm}"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "$(fnm env --shell bash)" 2>/dev/null
+fi
+
 # ── Helpers ─────────────────────────────────────────────
 
 log_info()  { echo -e "${CYAN}[RadioZec]${NC} $1"; }
@@ -368,9 +376,8 @@ do_start() {
 
   # ── 8. Start Node.js app ────────────────────────────
   if [ "$mode" = "prod" ]; then
-    log_info "Building production bundles..."
+    log_info "Compiling server TypeScript..."
     (cd "$SERVER_DIR" && npx tsc)
-    (cd "$PROJECT_ROOT/client" && npx vite build)
     echo ""
     log_info "Starting Node.js (production)..."
     (cd "$SERVER_DIR" && node dist/index.js &>"$LOG_DIR/node.log" &)
@@ -379,8 +386,9 @@ do_start() {
     echo ""
     echo "─────────────────────────────────────"
     log_ok "${BOLD}RadioZec is running!${NC}"
-    echo -e "   App:     http://localhost:3000"
-    echo -e "   Admin:   http://localhost:3000/admin"
+    echo -e "   App:     https://radio.zcashbr.com"
+    echo -e "   Admin:   https://radio.zcashbr.com/admin"
+    echo -e "   API:     http://localhost:3000"
     echo -e "   Icecast: http://localhost:8001"
     echo -e "   Logs:    $LOG_DIR/"
     echo ""
