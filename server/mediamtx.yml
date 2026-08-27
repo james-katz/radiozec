@@ -14,18 +14,20 @@ apiAddress: 127.0.0.1:9997
 rtmp: yes
 rtmpAddress: :1935
 
-# ── HLS (fallback playback) ──
+# ── HLS (playback) ──
 hls: yes
 hlsAddress: :8888
 hlsAllowOrigin: '*'
-hlsVariant: mpegts
-hlsSegmentCount: 3
+hlsVariant: fmp4
+hlsSegmentCount: 5
 hlsSegmentDuration: 1s
+hlsPartDuration: 250ms
 hlsAlwaysRemux: yes
 
 # ── WebRTC (low-latency playback) ──
 webrtc: yes
 webrtcAddress: :8889
+webrtcAllowOrigin: '*'
 
 # ── Disable unused protocols ──
 rtsp: no

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { usePlayerStore } from '../../stores/playerStore';
 
@@ -6,12 +6,15 @@ export default function LivePlayer() {
   const { playback } = usePlayerStore();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [status, setStatus] = useState<'loading' | 'playing' | 'error'>('loading');
 
   const hlsUrl = playback.liveHlsUrl;
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !hlsUrl) return;
+
+    setStatus('loading');
 
     // Clean up previous instance
     if (hlsRef.current) {
@@ -24,22 +27,33 @@ export default function LivePlayer() {
         enableWorker: true,
         lowLatencyMode: true,
         liveSyncDurationCount: 3,
-        liveMaxLatencyDurationCount: 6,
+        liveMaxLatencyDurationCount: 10,
+        // Retry aggressively — HLS segments may take a few seconds to appear
+        manifestLoadingMaxRetry: 30,
+        manifestLoadingRetryDelay: 2000,
+        levelLoadingMaxRetry: 20,
+        levelLoadingRetryDelay: 2000,
+        fragLoadingMaxRetry: 10,
       });
 
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setStatus('playing');
         video.play().catch(() => {});
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          console.warn('[LivePlayer] Fatal HLS error, attempting recovery:', data.type);
+          console.warn('[LivePlayer] HLS error:', data.type, data.details);
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            hls.startLoad();
+            // Retry on network errors (stream might not have segments yet)
+            setTimeout(() => hls.startLoad(), 2000);
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
+          } else {
+            setStatus('error');
           }
         }
       });
@@ -49,6 +63,7 @@ export default function LivePlayer() {
       // Safari native HLS
       video.src = hlsUrl;
       video.addEventListener('loadedmetadata', () => {
+        setStatus('playing');
         video.play().catch(() => {});
       });
     }
@@ -70,18 +85,58 @@ export default function LivePlayer() {
       overflow: 'hidden',
     }}>
       {hlsUrl ? (
-        <video
-          ref={videoRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-          }}
-          autoPlay
-          muted
-          playsInline
-          controls
-        />
+        <>
+          <video
+            ref={videoRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: status === 'playing' ? 'block' : 'none',
+            }}
+            autoPlay
+            muted
+            playsInline
+            controls
+          />
+          {status === 'loading' && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}>
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                border: '3px solid rgba(255,255,255,0.15)',
+                borderTop: '3px solid #e11d48',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }} />
+              <p style={{ color: '#888', fontSize: '0.9rem' }}>Connecting to live stream...</p>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+          {status === 'error' && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</p>
+                <p style={{ color: '#aaa', fontSize: '0.95rem' }}>Unable to load stream</p>
+                <p style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.25rem' }}>Check MediaMTX is running</p>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div style={{
           position: 'absolute',
