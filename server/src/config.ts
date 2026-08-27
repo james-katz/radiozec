@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+
+// Load .env from project root (parent of server/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export interface AppConfig {
   // Zkool / Zcash
@@ -71,6 +74,6 @@ export const config: AppConfig = {
 
   // MediaMTX
   mediamtxApiUrl: process.env.MEDIAMTX_API_URL || 'http://127.0.0.1:9997',
-  mediamtxHlsUrl: process.env.MEDIAMTX_HLS_URL || 'http://localhost:8888/zecradio-live/index.m3u8',
+  mediamtxHlsUrl: process.env.MEDIAMTX_HLS_URL || '/live/zecradio-live/index.m3u8',
   liveStreamKey: process.env.LIVE_STREAM_KEY || 'zecradio-live',
 };
