@@ -83,8 +83,13 @@ async function main() {
   }
 
   const name = (await ask('Account name (e.g. "RadioZec Donations"): ')).trim() || 'RadioZec';
-  const birthStr = await ask('Birth height (0 to scan from genesis, or a recent height): ');
-  const birth = parseInt(birthStr, 10) || 0;
+
+  // Auto-detect chain tip for birth height
+  const chainTip = await zkool.getServerHeight();
+  console.log(`  Current chain tip: ${chainTip}`);
+  const birthStr = await ask(`Birth height (default: ${chainTip} = current tip): `);
+  const birth = parseInt(birthStr, 10) || chainTip;
+
   const aindexStr = await ask('Account index (usually 0): ');
   const aindex = parseInt(aindexStr, 10) || 0;
 
