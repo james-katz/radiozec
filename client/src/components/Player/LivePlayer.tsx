@@ -3,10 +3,10 @@ import { usePlayerStore } from '../../stores/playerStore';
 export default function LivePlayer() {
   const { playback } = usePlayerStore();
 
-  // MediaMTX serves a built-in player at the path URL.
+  // MediaMTX's built-in WebRTC player is proxied through Apache at /stream/
   // It auto-negotiates WebRTC (sub-second latency) with HLS fallback.
   const playerUrl = playback.liveHlsUrl
-    ? playback.liveHlsUrl.replace('/index.m3u8', '/')
+    ? '/stream/' + playback.liveHlsUrl.replace(/.*\/hls\//, '').replace('/index.m3u8', '') + '/'
     : null;
 
   return (
