@@ -7,8 +7,8 @@ export default function QueueDisplay() {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Now Playing */}
-      {current && (
+      {/* Now Playing (hidden during live events) */}
+      {current && !playback.isLive && (
         <div className="glass-card p-3 border-l-3 border-gold-500 animate-fade-in">
           <div className="flex items-center gap-3">
             <img

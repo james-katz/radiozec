@@ -18,6 +18,7 @@ interface Stats {
 interface ConfigValues {
   queueVideoPrice: number;
   skipVideoPrice: number;
+  donationsEnabled: boolean;
 }
 
 interface JingleFile {
@@ -449,8 +450,32 @@ export default function AdminPage() {
             <h2 className="text-base font-semibold text-base-200">Configuration</h2>
             {config && (
               <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-base-800/50">
+                  <div>
+                    <p className="text-sm font-medium text-base-200">Donations</p>
+                    <p className="text-xs text-base-500">Enable Queue Song / Skip Song buttons</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const updated = { ...config, donationsEnabled: !config.donationsEnabled };
+                      setConfig(updated);
+                      fetch(`${API_BASE}/config`, {
+                        method: 'PUT',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ donationsEnabled: updated.donationsEnabled }),
+                      });
+                    }}
+                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                      config.donationsEnabled ? 'bg-emerald-500' : 'bg-base-600'
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                      config.donationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
                 <div>
-                  <label className="text-xs text-base-400 mb-1 block">Queue Video Price (ZEC)</label>
+                  <label className="text-xs text-base-400 mb-1 block">Queue Song Price (ZEC)</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -460,7 +485,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-base-400 mb-1 block">Skip Video Price (ZEC)</label>
+                  <label className="text-xs text-base-400 mb-1 block">Skip Song Price (ZEC)</label>
                   <input
                     type="number"
                     step="0.0001"

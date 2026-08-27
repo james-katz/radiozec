@@ -46,6 +46,7 @@ export function useSocket() {
         streamUrl: data.streamUrl,
         currentItem: data.currentItem,
         playing: data.playing,
+        donationsEnabled: data.donationsEnabled ?? true,
       });
     });
 

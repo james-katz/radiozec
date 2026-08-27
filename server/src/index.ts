@@ -14,7 +14,7 @@ import { initChat, handleChatConnection, sendSystemMessage } from './chat';
 import { startScanner } from './scanner';
 import { cleanupMediaFiles } from './downloader';
 import { LiquidsoapClient } from './liquidsoap';
-import { initLiveMode, getLiveState, isMediaMTXAlive } from './liveMode';
+import { initLiveMode, getLiveState, isLive, isMediaMTXAlive } from './liveMode';
 import { buildQueueUri, buildSkipUri } from './zip321';
 import { parseYouTubeUrl, fetchVideoMeta } from './youtube';
 import adminRouter from './admin';
@@ -68,9 +68,12 @@ async function main() {
   // ── Initialize Modules ────────────────────────────────
   initQueue(io, liquidsoap, (item) => {
     onTrackChange(item);
-    sendSystemMessage(
-      `🎵 Now playing: ${item.title}${item.isFallback ? '' : ` (requested by ${item.requestedBy})`}`
-    );
+    // Don't spam "Now playing" notifications during live events
+    if (!isLive()) {
+      sendSystemMessage(
+        `🎵 Now playing: ${item.title}${item.isFallback ? '' : ` (requested by ${item.requestedBy})`}`
+      );
+    }
   });
   initSync(io);
   initChat(io);
@@ -113,11 +116,11 @@ async function main() {
   });
 
   // ── Socket.IO Handlers ────────────────────────────────
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     console.log(`[Socket] Client connected: ${socket.id}`);
 
     // Send current state on connect
-    socket.emit('sync:state', getPlaybackState());
+    socket.emit('sync:state', await getPlaybackState());
     socket.emit('queue:updated', {
       queue: getQueue(),
       current: getCurrentItem(),
@@ -175,9 +178,9 @@ async function main() {
   app.use('/api/admin', adminRouter);
 
   // Public endpoint: get current state
-  app.get('/api/state', (_req, res) => {
+  app.get('/api/state', async (_req, res) => {
     res.json({
-      playback: getPlaybackState(),
+      playback: await getPlaybackState(),
       queue: getQueue(),
       current: getCurrentItem(),
     });

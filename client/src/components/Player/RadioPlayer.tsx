@@ -298,8 +298,8 @@ function AudioRadioPlayer({ returnedFromLive = false }: { returnedFromLive?: boo
         </div>
       )}
 
-      {/* ── Now Playing overlay (top-left) ── */}
-      {isPlaying && (
+      {/* ── Now Playing overlay (top-left, hidden during live) ── */}
+      {isPlaying && !playback.isLive && (
         <div className="absolute top-0 left-0 z-20 p-6
                         animate-[fadeSlideUp_0.5s_ease-out]">
           <div className="space-y-1">

@@ -167,10 +167,12 @@ router.get('/config', verifyToken, async (_req: Request, res: Response) => {
   try {
     const queuePrice = await getQueuePrice();
     const skipPrice = await getSkipPrice();
+    const donationsEnabled = (await getRuntimeConfig('donationsEnabled', 'false')) === 'true';
 
     res.json({
       queueVideoPrice: queuePrice,
       skipVideoPrice: skipPrice,
+      donationsEnabled,
     });
   } catch {
     res.status(500).json({ message: 'Internal server error' });
@@ -179,13 +181,16 @@ router.get('/config', verifyToken, async (_req: Request, res: Response) => {
 
 router.put('/config', verifyToken, async (req: Request, res: Response) => {
   try {
-    const { queueVideoPrice, skipVideoPrice } = req.body;
+    const { queueVideoPrice, skipVideoPrice, donationsEnabled } = req.body;
 
     if (queueVideoPrice !== undefined) {
       await setRuntimeConfig('queueVideoPrice', String(queueVideoPrice));
     }
     if (skipVideoPrice !== undefined) {
       await setRuntimeConfig('skipVideoPrice', String(skipVideoPrice));
+    }
+    if (donationsEnabled !== undefined) {
+      await setRuntimeConfig('donationsEnabled', String(donationsEnabled));
     }
 
     res.json({ message: 'Config updated' });

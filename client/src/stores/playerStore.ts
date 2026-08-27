@@ -19,6 +19,7 @@ interface PlaybackState {
   playing: boolean;
   isLive: boolean;
   liveHlsUrl: string | null;
+  donationsEnabled: boolean;
 }
 
 interface PlayerStore {
@@ -40,6 +41,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     playing: false,
     isLive: false,
     liveHlsUrl: null,
+    donationsEnabled: true,
   },
   queue: [],
   volume: 80,

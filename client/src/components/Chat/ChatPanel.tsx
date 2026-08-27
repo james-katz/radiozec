@@ -121,27 +121,27 @@ export default function ChatPanel() {
       <div className="px-3 py-2 flex gap-2 border-t border-base-800/50">
         <button
           onClick={() => setShowQueueModal(true)}
-          disabled={playback.isLive}
+          disabled={playback.isLive || !playback.donationsEnabled}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all active:scale-[0.98] shadow-lg
-                     ${playback.isLive
+                     ${playback.isLive || !playback.donationsEnabled
                        ? 'bg-base-700 text-base-500 shadow-none cursor-not-allowed'
                        : 'bg-gradient-to-r from-gold-600 to-gold-500 text-base-950 hover:from-gold-500 hover:to-gold-400 shadow-gold-500/20'
                      }`}
-          title={playback.isLive ? 'Queue is paused during live events' : ''}
+          title={playback.isLive ? 'Queue is paused during live events' : !playback.donationsEnabled ? 'Donations are currently disabled' : ''}
         >
-          🎵 Queue Video
+          🎵 Queue Song
         </button>
         <button
           onClick={handleSkipRequest}
-          disabled={playback.isLive}
+          disabled={playback.isLive || !playback.donationsEnabled}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all active:scale-[0.98] border
-                     ${playback.isLive
+                     ${playback.isLive || !playback.donationsEnabled
                        ? 'bg-base-800 text-base-500 border-base-700 cursor-not-allowed'
                        : 'bg-base-700 text-base-200 hover:bg-base-600 border-base-600'
                      }`}
-          title={playback.isLive ? 'Skip is disabled during live events' : ''}
+          title={playback.isLive ? 'Skip is disabled during live events' : !playback.donationsEnabled ? 'Donations are currently disabled' : ''}
         >
-          ⏭ Skip Video
+          ⏭ Skip Song
         </button>
       </div>
 

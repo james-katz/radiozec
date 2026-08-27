@@ -164,6 +164,7 @@ export async function initializeDatabase(): Promise<void> {
   const defaults: Record<string, string> = {
     queueVideoPrice: String(config.queueVideoPrice),
     skipVideoPrice: String(config.skipVideoPrice),
+    donationsEnabled: 'false',
   };
   for (const [key, value] of Object.entries(defaults)) {
     const existing = await Config.findByPk(key);

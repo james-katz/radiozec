@@ -2,6 +2,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { config } from './config';
 import type { QueueItem } from './queue';
 import { getLiveState } from './liveMode';
+import { getRuntimeConfig } from './db';
 
 // ── Playback State ────────────────────────────────────────
 
@@ -11,14 +12,13 @@ export interface PlaybackState {
   playing: boolean;           // Whether stream is active
   isLive: boolean;            // Whether live mode is active
   liveHlsUrl: string | null;  // HLS stream URL when live
+  donationsEnabled: boolean;  // Whether queue/skip buttons are enabled
 }
 
-let state: PlaybackState = {
+let state: Omit<PlaybackState, 'isLive' | 'liveHlsUrl' | 'donationsEnabled'> = {
   streamUrl: config.icecastUrl,
   currentItem: null,
   playing: false,
-  isLive: false,
-  liveHlsUrl: null,
 };
 
 let io: SocketIOServer | null = null;
@@ -29,12 +29,14 @@ export function initSync(socketIo: SocketIOServer) {
   io = socketIo;
 }
 
-export function getPlaybackState(): PlaybackState {
+export async function getPlaybackState(): Promise<PlaybackState> {
   const live = getLiveState();
+  const donationsEnabled = (await getRuntimeConfig('donationsEnabled', 'false')) === 'true';
   return {
     ...state,
     isLive: live.isLive,
     liveHlsUrl: live.hlsUrl,
+    donationsEnabled,
   };
 }
 
@@ -72,7 +74,7 @@ export function setStreamActive(active: boolean): void {
 
 // ── Broadcast ─────────────────────────────────────────────
 
-function broadcastState(): void {
+async function broadcastState(): Promise<void> {
   if (!io) return;
-  io.emit('sync:state', getPlaybackState());
+  io.emit('sync:state', await getPlaybackState());
 }
