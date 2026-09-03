@@ -1,10 +1,11 @@
 #!/usr/bin/liquidsoap
 
 # ══════════════════════════════════════════════════════════
-# RadioZec — Liquidsoap Configuration
+# RadioZec — Liquidsoap Configuration (1.4.x legacy)
 # Community radio powered by Zcash donations
 #
-# Compatible with Liquidsoap 2.x
+# This file is for Liquidsoap 1.4.x (Debian 11 / older distros).
+# For 2.x+, use radio.liq instead.
 # ══════════════════════════════════════════════════════════
 
 # ── Server Settings ──────────────────────────────────────
@@ -50,11 +51,13 @@ def on_new_track(m)
 
   data = '{"title":"#{title}","artist":"#{artist}","filename":"#{filename}","youtubeId":"#{youtube_id}"}'
 
-  ignore(process.run("curl -s -X POST -H 'Content-Type: application/json' -d '#{data}' http://127.0.0.1:3000/api/internal/track-change &"))
+  # 1.4.x uses system() instead of process.run()
+  system("curl -s -X POST -H 'Content-Type: application/json' -d '#{data}' http://127.0.0.1:3000/api/internal/track-change &")
 end
 
-# Register metadata callback (2.x: method call, not wrapping)
-radio.on_metadata(on_new_track)
+# Save reference for skip and register metadata callback
+# In 1.4.x, on_metadata wraps the source
+radio = on_metadata(on_new_track, radio)
 
 # ── Register Skip Command ───────────────────────────────
 server.register(

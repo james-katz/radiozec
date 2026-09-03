@@ -374,11 +374,19 @@ do_start() {
     log_ok "Liquidsoap already running on port 1234."
   else
     log_info "Starting Liquidsoap..."
-    # Liquidsoap's radio.liq uses relative paths — must run from server/
-    (cd "$SERVER_DIR" && liquidsoap ./radio.liq &>"$LOG_DIR/liquidsoap.log" &)
+    # Auto-detect version: 1.x uses radio-legacy.liq, 2.x uses radio.liq
+    local ls_version
+    ls_version=$(liquidsoap --version 2>/dev/null | head -1 | grep -oP '\d+' | head -1 || echo "2")
+    local liq_script="radio.liq"
+    if [ "$ls_version" = "1" ]; then
+      liq_script="radio-legacy.liq"
+      log_info "Detected Liquidsoap 1.x — using ${liq_script}"
+    fi
+    # Liquidsoap's .liq uses relative paths — must run from server/
+    (cd "$SERVER_DIR" && liquidsoap ./"$liq_script" &>"$LOG_DIR/liquidsoap.log" &)
     sleep 1
     local ls_pid
-    ls_pid=$(pgrep -f "liquidsoap.*radio.liq" | head -1 || true)
+    ls_pid=$(pgrep -f "liquidsoap.*radio" | head -1 || true)
     if [ -n "$ls_pid" ]; then
       save_pid "liquidsoap" "$ls_pid"
     fi
