@@ -36,7 +36,8 @@ export async function checkDownloadable(youtubeId: string): Promise<DownloadChec
       '--no-warnings',
       '--print-json',                       // Print metadata as JSON
       '--no-playlist',
-      '--js-runtimes', 'node',
+      '--js-runtimes', 'node,deno',
+      '--remote-components', 'ejs:github',  // Download JS challenge solver for YouTube POT
     ];
 
     if (hasCookies) {
@@ -139,7 +140,8 @@ export async function downloadAudio(youtubeId: string): Promise<DownloadResult> 
       '--no-warnings',                      // Suppress warnings
       '--print-json',                       // Print metadata as JSON to stdout
       '--no-simulate',                      // Actually download (needed with --print-json)
-      '--js-runtimes', 'node',             // Use Node.js for YouTube JS challenges
+      '--js-runtimes', 'node,deno',         // Use Node.js/Deno for YouTube JS challenges
+      '--remote-components', 'ejs:github',  // Download JS challenge solver for YouTube POT
     ];
 
     // Add cookies if available
