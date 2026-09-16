@@ -73,6 +73,9 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
   const [stats, setStats] = useState<Stats | null>(null);
   const [config, setConfig] = useState<ConfigValues | null>(null);
+  const [configForm, setConfigForm] = useState<ConfigValues | null>(null);
+  const [configDirty, setConfigDirty] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
   const [queueItems, setQueueItems] = useState<any[]>([]);
   const [jingles, setJingles] = useState<JingleFile[]>([]);
   const [uploadingJingle, setUploadingJingle] = useState(false);
@@ -126,7 +129,14 @@ export default function AdminPage() {
         }
 
         setStats(await statsRes.json());
-        setConfig(await configRes.json());
+        const configData = await configRes.json();
+        setConfig(configData);
+        // Only initialize the form if it hasn't been touched by the user
+        setConfigForm((prev) => {
+          if (prev === null) return configData;
+          // Don't overwrite user edits
+          return prev;
+        });
         const qData = await queueRes.json();
         setQueueItems(qData.queue || []);
         const jData = await jinglesRes.json();
@@ -152,12 +162,22 @@ export default function AdminPage() {
   };
 
   const handleUpdateConfig = async () => {
-    if (!config) return;
-    await fetch(`${API_BASE}/config`, {
-      method: 'PUT',
-      headers: authHeaders(),
-      body: JSON.stringify(config),
-    });
+    if (!configForm) return;
+    try {
+      const res = await fetch(`${API_BASE}/config`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(configForm),
+      });
+      if (res.ok) {
+        setConfig(configForm);
+        setConfigDirty(false);
+        setConfigSaved(true);
+        setTimeout(() => setConfigSaved(false), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to save config:', err);
+    }
   };
 
   const handleUploadJingle = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -448,7 +468,7 @@ export default function AdminPage() {
           {/* Configuration */}
           <div className="glass-card p-6 space-y-4">
             <h2 className="text-base font-semibold text-base-200">Configuration</h2>
-            {config && (
+            {configForm && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-base-800/50">
                   <div>
@@ -457,7 +477,8 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => {
-                      const updated = { ...config, donationsEnabled: !config.donationsEnabled };
+                      const updated = { ...configForm, donationsEnabled: !configForm.donationsEnabled };
+                      setConfigForm(updated);
                       setConfig(updated);
                       fetch(`${API_BASE}/config`, {
                         method: 'PUT',
@@ -466,11 +487,11 @@ export default function AdminPage() {
                       });
                     }}
                     className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                      config.donationsEnabled ? 'bg-emerald-500' : 'bg-base-600'
+                      configForm.donationsEnabled ? 'bg-emerald-500' : 'bg-base-600'
                     }`}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
-                      config.donationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                      configForm.donationsEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
                 </div>
@@ -479,8 +500,12 @@ export default function AdminPage() {
                   <input
                     type="number"
                     step="0.0001"
-                    value={config.queueVideoPrice}
-                    onChange={(e) => setConfig({ ...config, queueVideoPrice: parseFloat(e.target.value) || 0 })}
+                    value={configForm.queueVideoPrice}
+                    onChange={(e) => {
+                      setConfigForm({ ...configForm, queueVideoPrice: parseFloat(e.target.value) || 0 });
+                      setConfigDirty(true);
+                      setConfigSaved(false);
+                    }}
                     className="w-full bg-base-800 text-sm text-base-100 px-3 py-2 rounded-lg border border-base-600 focus:border-gold-500 focus:outline-none"
                   />
                 </div>
@@ -489,16 +514,26 @@ export default function AdminPage() {
                   <input
                     type="number"
                     step="0.0001"
-                    value={config.skipVideoPrice}
-                    onChange={(e) => setConfig({ ...config, skipVideoPrice: parseFloat(e.target.value) || 0 })}
+                    value={configForm.skipVideoPrice}
+                    onChange={(e) => {
+                      setConfigForm({ ...configForm, skipVideoPrice: parseFloat(e.target.value) || 0 });
+                      setConfigDirty(true);
+                      setConfigSaved(false);
+                    }}
                     className="w-full bg-base-800 text-sm text-base-100 px-3 py-2 rounded-lg border border-base-600 focus:border-gold-500 focus:outline-none"
                   />
                 </div>
                 <button
                   onClick={handleUpdateConfig}
-                  className="w-full py-2.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm font-medium hover:bg-purple-500/30 transition-all border border-purple-500/30"
+                  className={`w-full py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                    configSaved
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : configDirty
+                        ? 'bg-gold-500/20 text-gold-400 border-gold-500/30 hover:bg-gold-500/30'
+                        : 'bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30'
+                  }`}
                 >
-                  Save Configuration
+                  {configSaved ? '✓ Saved!' : configDirty ? 'Save Changes' : 'Save Configuration'}
                 </button>
               </div>
             )}
