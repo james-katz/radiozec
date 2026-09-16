@@ -12,7 +12,8 @@ import { initQueue, getQueue, getCurrentItem, enqueue, onLiquidsoapTrackChange, 
 import { initSync, onTrackChange, getPlaybackState } from './sync';
 import { initChat, handleChatConnection, sendSystemMessage } from './chat';
 import { startScanner } from './scanner';
-import { cleanupMediaFiles } from './downloader';
+import { cleanupMediaFiles, checkDownloadable } from './downloader';
+import { createPendingRequest, cleanupExpired as cleanupPendingRequests } from './pendingRequests';
 import { LiquidsoapClient } from './liquidsoap';
 import { initLiveMode, getLiveState, isLive, isMediaMTXAlive } from './liveMode';
 import { buildQueueUri, buildSkipUri } from './zip321';
@@ -105,6 +106,9 @@ async function main() {
   // Schedule media cleanup every hour
   setInterval(() => cleanupMediaFiles(), 60 * 60 * 1000);
 
+  // Schedule pending request cleanup every 5 minutes
+  setInterval(() => cleanupPendingRequests(), 5 * 60 * 1000);
+
   // ── Liquidsoap Webhook ────────────────────────────────
   // Called by Liquidsoap's on_track handler when a new track starts
   app.post('/api/internal/track-change', (req, res) => {
@@ -130,7 +134,7 @@ async function main() {
     // Chat handling
     handleChatConnection(socket);
 
-    // Queue video request — returns ZIP-321 URI for payment
+    // Queue video request — validate, dry-run, then return ZIP-321 URI for payment
     socket.on('queue:request', async (data: { youtubeUrl: string }) => {
       const videoId = parseYouTubeUrl(data.youtubeUrl);
       if (!videoId) {
@@ -144,9 +148,20 @@ async function main() {
         return;
       }
 
+      // Dry-run: check if the video is actually downloadable (zero bandwidth)
+      const check = await checkDownloadable(videoId);
+      if (!check.downloadable) {
+        const reason = check.reason || 'Video is not available for download';
+        console.log(`[Queue] Dry-run rejected ${videoId}: ${reason}`);
+        socket.emit('queue:payment', { error: `This video cannot be downloaded: ${reason}` });
+        return;
+      }
+
+      // Create a pending request and build payment URI with the request ID as memo
+      const pending = createPendingRequest(videoId, meta);
       const address = await zkool.getAddress();
       const queuePrice = await getQueuePrice();
-      const uri = buildQueueUri(address.ua || address.orchard, queuePrice, data.youtubeUrl);
+      const uri = buildQueueUri(address.ua || address.orchard, queuePrice, pending.id);
 
       socket.emit('queue:payment', {
         uri,

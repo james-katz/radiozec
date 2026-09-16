@@ -25,9 +25,10 @@ export function buildPaymentUri(address: string, amount: number, memo: string): 
 
 /**
  * Build a "Queue Video" payment URI.
+ * Memo contains `QUEUE:<requestId>` to match against pending requests.
  */
-export function buildQueueUri(address: string, price: number, youtubeUrl: string): string {
-  return buildPaymentUri(address, price, youtubeUrl);
+export function buildQueueUri(address: string, price: number, requestId: string): string {
+  return buildPaymentUri(address, price, `QUEUE:${requestId}`);
 }
 
 /**

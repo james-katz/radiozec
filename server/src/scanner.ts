@@ -3,6 +3,7 @@ import { Donation, getQueuePrice, getSkipPrice } from './db';
 import { extractYouTubeUrlFromMemo } from './youtube';
 import { enqueue, skipCurrent } from './queue';
 import { config } from './config';
+import { consumePendingRequest } from './pendingRequests';
 
 let scanTimer: ReturnType<typeof setInterval> | null = null;
 let lastProcessedTxid: string | null = null;
@@ -40,6 +41,19 @@ async function initializeLastTxid(): Promise<void> {
     order: [['createdAt', 'DESC']],
   });
   lastProcessedTxid = latest?.txid ?? null;
+}
+
+/**
+ * Extract a pending request ID from a memo with the `QUEUE:` prefix.
+ * Returns the request ID or null if the memo doesn't match the format.
+ */
+function extractQueueRequestId(memo: string): string | null {
+  const trimmed = memo.trim();
+  if (trimmed.startsWith('QUEUE:')) {
+    const id = trimmed.slice('QUEUE:'.length).trim();
+    return id.length > 0 ? id : null;
+  }
+  return null;
 }
 
 async function scanForDonations(zkool: ZkoolClient): Promise<void> {
@@ -88,10 +102,27 @@ async function scanForDonations(zkool: ZkoolClient): Promise<void> {
     if (memo.trim().toUpperCase() === 'SKIP' && amount >= skipPrice) {
       action = 'skip';
     } else {
-      const videoId = extractYouTubeUrlFromMemo(memo);
-      if (videoId && amount >= queuePrice) {
-        action = 'queue';
-        youtubeUrl = videoId;
+      // Try new format first: QUEUE:<requestId>
+      const requestId = extractQueueRequestId(memo);
+      if (requestId && amount >= queuePrice) {
+        const pending = consumePendingRequest(requestId);
+        if (pending) {
+          action = 'queue';
+          youtubeUrl = pending.youtubeId;
+          console.log(`[Scanner] Matched pending request ${requestId} → ${pending.youtubeId}`);
+        } else {
+          console.warn(`[Scanner] Pending request not found or expired: ${requestId}`);
+        }
+      }
+
+      // Backward compatibility: try legacy YouTube-URL-in-memo format
+      if (action === 'unknown') {
+        const videoId = extractYouTubeUrlFromMemo(memo);
+        if (videoId && amount >= queuePrice) {
+          action = 'queue';
+          youtubeUrl = videoId;
+          console.log(`[Scanner] Legacy memo format — extracted video ID: ${videoId}`);
+        }
       }
     }
 
@@ -127,3 +158,4 @@ async function scanForDonations(zkool: ZkoolClient): Promise<void> {
     console.log(`[Scanner] Processed ${newDonations} new donation(s)`);
   }
 }
+

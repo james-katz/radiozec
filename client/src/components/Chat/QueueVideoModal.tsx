@@ -98,7 +98,7 @@ export default function QueueVideoModal({ onClose, type }: Props) {
               disabled={loading || !url.trim()}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-gold-600 to-gold-500 text-base-950 font-bold text-sm hover:from-gold-500 hover:to-gold-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             >
-              {loading ? 'Fetching video info...' : 'Generate Payment QR'}
+              {loading ? 'Checking video availability...' : 'Generate Payment QR'}
             </button>
           </form>
         )}

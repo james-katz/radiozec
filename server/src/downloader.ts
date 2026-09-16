@@ -10,6 +10,88 @@ export interface DownloadResult {
   duration: number;
 }
 
+export interface DownloadCheck {
+  downloadable: boolean;
+  title?: string;
+  duration?: number;
+  reason?: string;
+}
+
+/**
+ * Check if a YouTube video is downloadable without actually downloading it.
+ * Uses yt-dlp --simulate to exercise the full extraction pipeline
+ * (cookies, geo-checks, age gates) with zero bandwidth cost.
+ */
+export async function checkDownloadable(youtubeId: string): Promise<DownloadCheck> {
+  const url = `https://www.youtube.com/watch?v=${youtubeId}`;
+
+  // Check for cookies file
+  const cookiesPath = path.resolve(__dirname, '..', 'cookies.txt');
+  const hasCookies = fs.existsSync(cookiesPath);
+
+  return new Promise<DownloadCheck>((resolve) => {
+    const args = [
+      url,
+      '--simulate',                        // Don't download
+      '--no-warnings',
+      '--print-json',                       // Print metadata as JSON
+      '--no-playlist',
+      '--js-runtimes', 'node',
+    ];
+
+    if (hasCookies) {
+      args.push('--cookies', cookiesPath);
+    }
+
+    let stdout = '';
+    let stderr = '';
+
+    const child: ChildProcess = spawn('yt-dlp', args);
+
+    // Timeout after 15 seconds
+    const timeout = setTimeout(() => {
+      child.kill('SIGTERM');
+      resolve({ downloadable: false, reason: 'Timed out checking video availability' });
+    }, 15_000);
+
+    child.stdout?.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    child.stderr?.on('data', (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      clearTimeout(timeout);
+
+      if (code !== 0) {
+        const reason = stderr.trim().split('\n').pop() || `yt-dlp exited with code ${code}`;
+        console.log(`[Downloader] Dry-run failed for ${youtubeId}: ${reason}`);
+        resolve({ downloadable: false, reason });
+        return;
+      }
+
+      try {
+        const meta = JSON.parse(stdout.trim());
+        resolve({
+          downloadable: true,
+          title: meta.title || meta.fulltitle || youtubeId,
+          duration: meta.duration || 0,
+        });
+      } catch {
+        // yt-dlp exited 0 but no JSON — still consider it downloadable
+        resolve({ downloadable: true });
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timeout);
+      resolve({ downloadable: false, reason: `Failed to run yt-dlp: ${err.message}` });
+    });
+  });
+}
+
 /**
  * Download audio from a YouTube video using yt-dlp.
  * Returns the path to the downloaded file.
