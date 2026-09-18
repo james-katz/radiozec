@@ -161,12 +161,14 @@ async function main() {
       const pending = createPendingRequest(videoId, meta);
       const address = await zkool.getAddress();
       const queuePrice = await getQueuePrice();
+      const memo = `QUEUE:${pending.id}`;
       const uri = buildQueueUri(address.ua || address.orchard, queuePrice, pending.id);
 
       socket.emit('queue:payment', {
         uri,
         amount: queuePrice,
         address: address.ua || address.orchard,
+        memo,
         video: meta,
       });
     });
@@ -175,12 +177,14 @@ async function main() {
     socket.on('skip:request', async () => {
       const address = await zkool.getAddress();
       const skipPrice = await getSkipPrice();
+      const memo = 'SKIP';
       const uri = buildSkipUri(address.ua || address.orchard, skipPrice);
 
       socket.emit('skip:payment', {
         uri,
         amount: skipPrice,
         address: address.ua || address.orchard,
+        memo,
       });
     });
 

@@ -11,6 +11,7 @@ interface PaymentInfo {
   uri: string;
   amount: number;
   address: string;
+  memo?: string;
   video?: {
     videoId: string;
     title: string;
@@ -20,11 +21,31 @@ interface PaymentInfo {
   error?: string;
 }
 
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="shrink-0 px-2.5 py-1 rounded-md bg-base-700 text-base-300 text-xs font-medium hover:bg-base-600 active:scale-95 transition-all border border-base-600"
+    >
+      {copied ? '✓' : label || '📋'}
+    </button>
+  );
+}
+
 export default function QueueVideoModal({ onClose, type }: Props) {
   const [url, setUrl] = useState('');
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'zip321' | 'manual'>('zip321');
 
   const socket = getSocket();
 
@@ -128,39 +149,112 @@ export default function QueueVideoModal({ onClose, type }: Props) {
               </div>
             )}
 
-            {/* QR Code */}
-            <div className="flex flex-col items-center gap-3 py-4">
-              <div className="bg-white p-3 rounded-xl">
-                <QRCodeSVG
-                  value={payment.uri}
-                  size={200}
-                  level="M"
-                  bgColor="#ffffff"
-                  fgColor="#0a0b0f"
-                />
+            {/* Amount */}
+            <p className="text-center">
+              <span className="text-gold-400 font-bold text-xl">{payment.amount} ZEC</span>
+            </p>
+
+            {/* Tabs */}
+            <div className="flex rounded-lg bg-base-800/60 p-1 gap-1">
+              <button
+                onClick={() => setActiveTab('zip321')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'zip321'
+                    ? 'bg-base-700 text-base-100 shadow-sm'
+                    : 'text-base-400 hover:text-base-200'
+                }`}
+              >
+                ZIP-321 URI
+              </button>
+              <button
+                onClick={() => setActiveTab('manual')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'manual'
+                    ? 'bg-base-700 text-base-100 shadow-sm'
+                    : 'text-base-400 hover:text-base-200'
+                }`}
+              >
+                Manual Payment
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'zip321' && (
+              <div className="space-y-3 animate-fade-in">
+                {/* QR Code */}
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <div className="bg-white p-3 rounded-xl">
+                    <QRCodeSVG
+                      value={payment.uri}
+                      size={200}
+                      level="M"
+                      bgColor="#ffffff"
+                      fgColor="#0a0b0f"
+                    />
+                  </div>
+                  <p className="text-xs text-base-400 text-center">
+                    Scan with a ZIP-321 compatible Zcash wallet
+                  </p>
+                </div>
+
+                {/* URI Copy */}
+                <div className="bg-base-800 rounded-lg p-3">
+                  <p className="text-[10px] text-base-500 mb-1 font-medium uppercase tracking-wider">Payment URI</p>
+                  <div className="flex items-start gap-2">
+                    <p className="text-xs text-base-300 break-all font-mono leading-relaxed select-all flex-1">
+                      {payment.uri}
+                    </p>
+                    <CopyButton text={payment.uri} />
+                  </div>
+                </div>
               </div>
-              <p className="text-center">
-                <span className="text-gold-400 font-bold text-xl">{payment.amount} ZEC</span>
-              </p>
-              <p className="text-xs text-base-400 text-center">
-                Scan with your Zcash wallet to {type === 'queue' ? 'queue this video' : 'skip the current video'}
-              </p>
-            </div>
+            )}
 
-            {/* URI Copy */}
-            <div className="bg-base-800 rounded-lg p-3">
-              <p className="text-[10px] text-base-500 mb-1 font-medium uppercase tracking-wider">Payment URI</p>
-              <p className="text-xs text-base-300 break-all font-mono leading-relaxed select-all">
-                {payment.uri}
-              </p>
-            </div>
+            {activeTab === 'manual' && (
+              <div className="space-y-3 animate-fade-in">
+                <p className="text-xs text-base-400">
+                  If your wallet doesn't support ZIP-321 URIs, copy each field manually into a new transaction.
+                </p>
 
-            <button
-              onClick={() => navigator.clipboard.writeText(payment.uri)}
-              className="w-full py-2.5 rounded-lg bg-base-700 text-base-200 text-sm font-medium hover:bg-base-600 transition-all active:scale-[0.98] border border-base-600"
-            >
-              📋 Copy Payment URI
-            </button>
+                {/* Address */}
+                <div className="bg-base-800 rounded-lg p-3">
+                  <p className="text-[10px] text-base-500 mb-1.5 font-medium uppercase tracking-wider">Address</p>
+                  <div className="flex items-start gap-2">
+                    <p className="text-xs text-base-300 break-all font-mono leading-relaxed select-all flex-1">
+                      {payment.address}
+                    </p>
+                    <CopyButton text={payment.address} />
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div className="bg-base-800 rounded-lg p-3">
+                  <p className="text-[10px] text-base-500 mb-1.5 font-medium uppercase tracking-wider">Amount (ZEC)</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gold-400 font-bold font-mono flex-1 select-all">
+                      {payment.amount}
+                    </p>
+                    <CopyButton text={String(payment.amount)} />
+                  </div>
+                </div>
+
+                {/* Memo */}
+                {payment.memo && (
+                  <div className="bg-base-800 rounded-lg p-3">
+                    <p className="text-[10px] text-base-500 mb-1.5 font-medium uppercase tracking-wider">Memo</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-xs text-base-300 break-all font-mono leading-relaxed select-all flex-1">
+                        {payment.memo}
+                      </p>
+                      <CopyButton text={payment.memo} />
+                    </div>
+                    <p className="text-[10px] text-base-500 mt-2 leading-relaxed">
+                      ⚠️ The memo must be included exactly as shown, or your payment won't be recognized.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
